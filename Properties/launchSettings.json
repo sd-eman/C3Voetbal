@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "C3Voetbal (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "C3Voetbal (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
