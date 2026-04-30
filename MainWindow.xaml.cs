@@ -23,9 +23,11 @@ namespace C3Voetbal
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+  
         public MainWindow()
         {
             InitializeComponent();
         }
     }
 }
+

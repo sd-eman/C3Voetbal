@@ -1,19 +1,46 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Window
     x:Class="C3Voetbal.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:C3Voetbal"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:C3Voetbal"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Title="C3Voetbal">
+    Title="C3Voetbal"
+    mc:Ignorable="d">
 
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
     <Grid>
-		<TextBox>Hello</TextBox>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+
+        <StackPanel Grid.Row="0" Margin="16">
+            <TextBlock Margin="0,0,0,8" Text="Aankomende wedstrijden" />
+            <ListView>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Padding="12">
+                            <TextBlock FontWeight="Bold" Text="match" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </StackPanel>
+
+
+        <StackPanel Grid.Row="1" Margin="16">
+            <TextBlock Text="Gok op deze wedstrijd:" />
+            <TextBlock FontWeight="Bold" Text="Team A vs Team B" />
+            <RadioButton Content="Team A wint" />
+            <RadioButton Content="Gelijkspel" />
+            <RadioButton Content="Team B wint" />
+            <Button Margin="0,12,0,0" Content="Gok plaatsen" />
+        </StackPanel>
     </Grid>
 </Window>
