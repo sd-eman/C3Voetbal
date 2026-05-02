@@ -13,34 +13,45 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid>
+    <Grid Background="#4a5c3a">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-
         <StackPanel Grid.Row="0" Margin="16">
-            <TextBlock Margin="0,0,0,8" Text="Aankomende wedstrijden" />
-            <ListView>
+            <TextBlock Margin="0,0,0,8" Text="Aankomende wedstrijden"
+                   Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+            <ListView x:Name="GamesListView"
+                  SelectionChanged="GamesListView_SelectionChanged"
+                  Background="#3a4a2c">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Padding="12">
-                            <TextBlock FontWeight="Bold" Text="match" />
+                            <TextBlock FontWeight="Bold" Text="{Binding DisplayName}"
+                                   Foreground="White"/>
                         </StackPanel>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
         </StackPanel>
 
-
-        <StackPanel Grid.Row="1" Margin="16">
-            <TextBlock Text="Gok op deze wedstrijd:" />
-            <TextBlock FontWeight="Bold" Text="Team A vs Team B" />
-            <RadioButton Content="Team A wint" />
-            <RadioButton Content="Gelijkspel" />
-            <RadioButton Content="Team B wint" />
-            <Button Margin="0,12,0,0" Content="Gok plaatsen" />
+        <StackPanel Grid.Row="1" Margin="16" Spacing="8">
+            <TextBlock Text="Gok op deze wedstrijd:" Foreground="#ccddaa"/>
+            <TextBlock x:Name="SelectedGameText" FontWeight="Bold"
+                   Text="Selecteer een wedstrijd" Foreground="White" FontSize="16"/>
+            <RadioButton x:Name="RadioTeam1" Content="Team A wint"
+                     Foreground="White" IsEnabled="False"/>
+            <RadioButton x:Name="RadioDraw" Content="Gelijkspel"
+                     Foreground="White" IsEnabled="False"/>
+            <RadioButton x:Name="RadioTeam2" Content="Team B wint"
+                     Foreground="White" IsEnabled="False"/>
+            <Button Margin="0,12,0,0" Content="Gok plaatsen"
+                x:Name="PlaceBetButton" IsEnabled="False"
+                Click="PlaceBetButton_Click"
+                Background="#8ba060" Foreground="White"/>
+            <TextBlock x:Name="BetFeedbackText" Margin="0,8,0,0"
+                   Foreground="#ccddaa"/>
         </StackPanel>
     </Grid>
 </Window>

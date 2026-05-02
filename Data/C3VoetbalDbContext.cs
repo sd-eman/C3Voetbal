@@ -14,14 +14,16 @@ namespace C3Voetbal.Data
         public DbSet <Team> Teams { get; set; }
         public DbSet <Game> Games { get; set; }
 
+        public DbSet<Bet> Bets { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseMySql(
                "server=localhost;" +                     // Server name
                "port=3306;" +                            // Server port
-               "user=c_sharp;" +                     // Username
-               "password=c_sharp;" +                 // Password
-               "database=csd_iv_EFCoreDb;"      // Database name
+               "user=root;" +                     // Username
+               "password=;" +                 // Password
+               "database=c3schoolvoetbal;"      // Database name
                , Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.21-mysql") // Version
                );
         }
@@ -59,6 +61,17 @@ namespace C3Voetbal.Data
                 entity.Property(e => e.Password).HasColumnName("password");
                 entity.Property(e => e.IsAdmin).HasColumnName("is_admin");
                 entity.Property(e => e.TeamId).HasColumnName("team_id");
+            });
+
+
+
+            modelBuilder.Entity<Bet>(entity =>
+            {
+                entity.ToTable("bets");
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.GameId).HasColumnName("game_id");
+                entity.Property(e => e.PredictedOutcome).HasColumnName("predicted_outcome");
+                entity.Property(e => e.Won).HasColumnName("won");
             });
         }
     }
