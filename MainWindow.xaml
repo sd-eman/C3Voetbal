@@ -17,7 +17,22 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+
+        <!-- Punten box rechtsboven -->
+        <Grid Grid.Row="0" Margin="16,16,16,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="C3Voetbal" Foreground="White" 
+                       FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+            <Border Grid.Column="1" Background="#8ba060" CornerRadius="8" Padding="12,6">
+                <TextBlock x:Name="PuntenText" Text="Jouw punten: 20" 
+                           Foreground="White" FontWeight="SemiBold"/>
+            </Border>
+        </Grid>
 
         <StackPanel Grid.Row="0" Margin="16">
             <TextBlock Margin="0,0,0,8" Text="Aankomende wedstrijden"
@@ -50,6 +65,32 @@
                 x:Name="PlaceBetButton" IsEnabled="False"
                 Click="PlaceBetButton_Click"
                 Background="#8ba060" Foreground="White"/>
+
+            <!-- Inzet panel, standaard verborgen -->
+            <StackPanel x:Name="InzetPanel" Visibility="Collapsed" Spacing="8">
+                <TextBlock Text="Hoeveel punten wil je inzetten?" 
+                           Foreground="#ccddaa"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="1" Tag="1" x:Name="InzetButton" Click="InzetButton_Click" 
+                            Background="#3a4a2c" Foreground="White"/>
+                    <Button Content="2" Tag="2" Click="InzetButton_Click"
+                            Background="#3a4a2c" Foreground="White"/>
+                    <Button Content="3" Tag="3" Click="InzetButton_Click"
+                            Background="#3a4a2c" Foreground="White"/>
+                    <Button Content="4" Tag="4" Click="InzetButton_Click"
+                            Background="#3a4a2c" Foreground="White"/>
+                    <Button Content="5" Tag="5" Click="InzetButton_Click"
+                            Background="#3a4a2c" Foreground="White"/>
+                </StackPanel>
+                <TextBlock x:Name="InzetText" Text="Inzet: 1 punt" 
+                           Foreground="#ccddaa" FontSize="12"/>
+                <TextBlock x:Name="ErrorText" Foreground="#ff6b6b" 
+                           Visibility="Collapsed"/>
+                <Button x:Name="BevestigButton" Content="Bevestig gok"
+                        Click="BevestigButton_Click"
+                        Background="#8ba060" Foreground="White"/>
+            </StackPanel>
+            
             <TextBlock x:Name="BetFeedbackText" Margin="0,8,0,0"
                    Foreground="#ccddaa"/>
         </StackPanel>

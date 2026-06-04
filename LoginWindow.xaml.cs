@@ -43,10 +43,28 @@ namespace C3Voetbal
                     return;
                 }
 
-                var result = await response.Content.ReadFromJsonAsync<LoginResult>();
+                // TIJDELIJK - debug
+                var rawJson = await response.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"Login response: {rawJson}");
+
+                var result = System.Text.Json.JsonSerializer.Deserialize<LoginResult>(rawJson,
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                System.Diagnostics.Debug.WriteLine($"User id: {result?.User?.Id}");
+
+
+                // var result = await response.Content.ReadFromJsonAsync<LoginResult>(
+                //     new System.Text.Json.JsonSerializerOptions
+                //     {
+                 //        PropertyNameCaseInsensitive = true
+                //     }); //
+
 
                 // Hoofdscherm openen
-                var main = new MainWindow();
+                var main = new MainWindow(result.User);
                 main.Activate();
                 this.Close();
             }

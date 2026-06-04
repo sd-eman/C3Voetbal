@@ -97,19 +97,114 @@ namespace C3Voetbal
                     responseJson = JsonSerializer.Serialize(games);
                 }
 
+                // GET /api/bets/check
+                else if (request.HttpMethod == "GET" && request.Url?.AbsolutePath == "/api/bets/check")
+                {
+                    var query = request.Url.Query;
+                    var userId = ulong.Parse(System.Web.HttpUtility.ParseQueryString(query)["user_id"]!);
+
+                    using var appDb = new AppDbContext();
+                    using var mainDb = new C3VoetbalDbContext();
+
+                    var bets = appDb.Bets
+                        .Where(b => b.UserId == userId && b.Won == null)
+                        .ToList();
+
+                    var results = new List<object>();
+
+                    foreach (var bet in bets)
+                    {
+                        var game = mainDb.Games.FirstOrDefault(g => g.Id == bet.GameId);
+
+                        // Sla over als wedstrijd niet bestaat, nog niet gespeeld of geen score
+                        if (game == null) continue;
+                        if (game.Date == null || game.Date > DateTime.Now) continue;
+                        if (game.Team1Score == null || game.Team2Score == null) continue;
+
+                        // Bepaal uitslag
+                        BetOutcome uitslag;
+                        bool gelijkspel = false;
+
+                        if (game.Team1Score > game.Team2Score) uitslag = BetOutcome.Team1Wins;
+                        else if (game.Team1Score < game.Team2Score) uitslag = BetOutcome.Team2Wins;
+                        else
+                        {
+                            uitslag = BetOutcome.Draw;
+                            gelijkspel = true;
+                        }
+
+                        bool gewonnen = bet.PredictedOutcome == uitslag;
+                        bet.Won = gewonnen;
+
+                        // Teamnaam voor melding
+                        var teams = mainDb.Teams.ToList();
+                        string teamNaam = "";
+                        if (bet.PredictedOutcome == BetOutcome.Team1Wins)
+                            teamNaam = teams.FirstOrDefault(t => t.Id == game.Team1Id)?.Name ?? "Team 1";
+                        else if (bet.PredictedOutcome == BetOutcome.Team2Wins)
+                            teamNaam = teams.FirstOrDefault(t => t.Id == game.Team2Id)?.Name ?? "Team 2";
+                        else
+                            teamNaam = "Gelijkspel";
+
+                        // Punten berekenen
+                        var user = mainDb.Users.FirstOrDefault(u => u.Id == userId);
+                        int puntenVeranderd = 0;
+
+                        if (gelijkspel)
+                        {
+                            puntenVeranderd = 0; // Gelijkspel → geen punten verlies
+                        }
+                        else if (gewonnen)
+                        {
+                            puntenVeranderd = bet.Inzet * 2;
+                            if (user != null) user.Points += puntenVeranderd;
+                        }
+                        else
+                        {
+                            puntenVeranderd = -bet.Inzet;
+                            if (user != null) user.Points += puntenVeranderd;
+                        }
+
+                        results.Add(new
+                        {
+                            GameId = bet.GameId,
+                            Gewonnen = gewonnen,
+                            Gelijkspel = gelijkspel,
+                            TeamNaam = teamNaam,
+                            Inzet = bet.Inzet,
+                            PuntenVeranderd = puntenVeranderd
+                        });
+                    }
+
+                    appDb.SaveChanges();
+                    mainDb.SaveChanges();
+
+                    responseJson = JsonSerializer.Serialize(new { results });
+                }
+
                 // POST /api/bets
                 else if (request.HttpMethod == "POST" && request.Url?.AbsolutePath == "/api/bets")
                 {
                     using var reader = new System.IO.StreamReader(request.InputStream);
                     var body = await reader.ReadToEndAsync();
-                    var bet = JsonSerializer.Deserialize<Bet>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    var betRequest = JsonSerializer.Deserialize<BetRequest>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    var bet = new Bet
+                    {
+                        GameId = Convert.ToUInt64(betRequest!.GameId),
+                        UserId = Convert.ToUInt64(betRequest.UserId),
+                        PredictedOutcome = betRequest.PredictedOutcome,
+                        Inzet = betRequest.Inzet,
+                        Won = null
+                    };
 
                     using var db = new AppDbContext();
-                    db.Bets.Add(bet!);
+                    db.Bets.Add(bet);
                     db.SaveChanges();
 
                     response.StatusCode = 201;
-                    responseJson = JsonSerializer.Serialize(bet);
+                    responseJson = JsonSerializer.Serialize(new { message = "Gok geplaatst" });
                 }
 
                 else
@@ -135,5 +230,13 @@ namespace C3Voetbal
     {
         public string? Email { get; set; }
         public string? Password { get; set; }
+    }
+
+    public class BetRequest
+    {
+        public long GameId { get; set; }
+        public long UserId { get; set; }
+        public BetOutcome PredictedOutcome { get; set; }
+        public int Inzet { get; set; }
     }
 }

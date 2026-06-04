@@ -17,7 +17,9 @@ namespace C3Voetbal.Model
     {
         public ulong Id { get; set; }
         public ulong GameId { get; set; }
+        public ulong UserId { get; set; }
         public BetOutcome PredictedOutcome { get; set; }
+        public int Inzet { get; set; }
         public bool? Won { get; set; }
     }
 }

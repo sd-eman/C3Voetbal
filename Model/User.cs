@@ -14,5 +14,6 @@ namespace C3Voetbal.Model
         public string Password { get; set; }
         public bool IsAdmin { get; set; }
         public ulong? TeamId { get; set; }
+        public int Points { get; set; } = 20;
     }
 }

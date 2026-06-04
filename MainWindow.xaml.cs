@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;         // NIEUW
-using System.Net.Http.Json;    // NIEUW
-using System.Runtime.InteropServices.WindowsRuntime;
-using C3Voetbal.Data;
+﻿using C3Voetbal.Data;
 using C3Voetbal.Model;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -14,12 +7,36 @@ using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;         // NIEUW
+using System.Net.Http.Json;    // NIEUW
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Media.Protection.PlayReady;
+using Windows.System;
 
 namespace C3Voetbal
 {
+    public class BetCheckResult
+    {
+        public List<BetResult>? Results { get; set; }
+    }
+
+    public class BetResult
+    {
+        public ulong GameId { get; set; }
+        public bool Gewonnen { get; set; }
+        public bool Gelijkspel { get; set; }
+        public string TeamNaam { get; set; }
+        public int Inzet { get; set; }
+        public int PuntenVeranderd { get; set; }
+    }
     public class GameViewModel
     {
         public ulong Id { get; set; }
@@ -31,16 +48,28 @@ namespace C3Voetbal
     public sealed partial class MainWindow : Window
     {
         private GameViewModel _selectedGame;
+        private UserDto _loggedInUser;      
+        private int _userPoints = 20;       
+        private int _inzet = 1;             
 
         private static readonly HttpClient _client = new HttpClient  // NIEUW
         {
             BaseAddress = new Uri("http://localhost:5000/api/")
         };
 
-        public MainWindow()
+        public MainWindow(UserDto user)
         {
             InitializeComponent();
+            _loggedInUser = user;
+            System.Diagnostics.Debug.WriteLine($"Ingelogde user id: {_loggedInUser?.Id}");
             LoadGames();
+            LoadUserPoints();
+            _ = CheckBetResultsAsync().ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    System.Diagnostics.Debug.WriteLine($"CheckBets fout: {t.Exception?.Message}");
+            });
+
         }
         private void LoadGames()
         {
@@ -59,6 +88,47 @@ namespace C3Voetbal
                 }).ToList();
             GamesListView.ItemsSource = upcoming;
         }
+
+        private void LoadUserPoints()
+        {
+            using var db = new C3VoetbalDbContext();
+            var user = db.Users.FirstOrDefault(u => u.Id == _loggedInUser.Id);
+            if (user != null)
+            {
+                _userPoints = user.Points;
+                PuntenText.Text = $"Jouw punten: {_userPoints}";
+            }
+        }
+
+        private async Task CheckBetResultsAsync()
+        {
+            var response = await _client.GetAsync($"bets/check?user_id={_loggedInUser.Id}");
+            if (!response.IsSuccessStatusCode) return;
+
+            var json = await response.Content.ReadAsStringAsync();
+            var data = JsonSerializer.Deserialize<BetCheckResult>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (data?.Results == null || data.Results.Count == 0) return;
+
+            string melding = "";
+            foreach (var result in data.Results)
+            {
+                if (result.Gewonnen)
+                    melding += $"🏆 Gefeliciteerd! {result.TeamNaam} heeft gewonnen! +{result.PuntenVeranderd} punten\n";
+                else if (result.Gelijkspel)
+                    melding += $"🤝 Gelijkspel bij {result.TeamNaam}! Geen punten verloren.\n";
+                else
+                    melding += $"❌ Helaas! {result.TeamNaam} heeft verloren. {result.PuntenVeranderd} punten\n";
+            }
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                LoadUserPoints();
+                BetFeedbackText.Text = melding.Trim();
+            });
+        }
+
         private void GamesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _selectedGame = GamesListView.SelectedItem as GameViewModel;
@@ -87,17 +157,63 @@ namespace C3Voetbal
                 BetFeedbackText.Text = "Kies eerst een uitkomst.";
                 return;
             }
+            // Laat inzet panel zien
+            InzetPanel.Visibility = Visibility.Visible;
+            BetFeedbackText.Text = "";
+        }
+
+        private void InzetButton_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as Button;
+            _inzet = int.Parse(btn.Tag.ToString());
+            InzetText.Text = $"Inzet: {_inzet} punt";
+
+            if (_inzet > _userPoints)
+            {
+                ErrorText.Text = $"Je hebt maar {_userPoints} punten!";
+                ErrorText.Visibility = Visibility.Visible;
+                BevestigButton.IsEnabled = false;
+            }
+            else
+            {
+                ErrorText.Visibility = Visibility.Collapsed;
+                BevestigButton.IsEnabled = true;
+            }
+
+        }
+
+        private async void BevestigButton_Click(object sender, RoutedEventArgs e)
+        {
+            BetOutcome outcome = BetOutcome.Draw;
+            if (RadioTeam1.IsChecked == true) outcome = BetOutcome.Team1Wins;
+            else if (RadioTeam2.IsChecked == true) outcome = BetOutcome.Team2Wins;
+            System.Diagnostics.Debug.WriteLine($"Bet versturen: game_id={_selectedGame.Id}, user_id={_loggedInUser.Id}, inzet={_inzet}");
+
             var response = await _client.PostAsJsonAsync("bets", new
             {
                 game_id = _selectedGame.Id,
-                predicted_outcome = outcome.Value
+                user_id = _loggedInUser.Id,
+                predicted_outcome = outcome,
+                inzet = _inzet
             });
+
+            var responseBody = await response.Content.ReadAsStringAsync();
+            System.Diagnostics.Debug.WriteLine($"Bet response: {response.StatusCode} - {responseBody}");
+
             if (response.IsSuccessStatusCode)
-                BetFeedbackText.Text = "✓ Gok geplaatst!";
-            PlaceBetButton.IsEnabled = false;
-            RadioTeam1.IsEnabled = false;
-            RadioDraw.IsEnabled = false;
-            RadioTeam2.IsEnabled = false;
+            {
+                BetFeedbackText.Text = "✓ Gok geplaatst! Punten worden verwerkt als de wedstrijd gespeeld is.";
+                InzetPanel.Visibility = Visibility.Collapsed;
+                PlaceBetButton.IsEnabled = false;
+                RadioTeam1.IsEnabled = false;
+                RadioDraw.IsEnabled = false;
+                RadioTeam2.IsEnabled = false;
+            }
+            else
+            {
+                BetFeedbackText.Text = "❌ Er ging iets mis, probeer opnieuw.";
+            }
         }
     }
 }
+

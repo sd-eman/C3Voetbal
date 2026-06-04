@@ -41,6 +41,7 @@ namespace C3Voetbal.Data
                 entity.Property(e => e.Field).HasColumnName("field");
                 entity.Property(e => e.RefereeId).HasColumnName("referee_id");
                 entity.Property(e => e.Time).HasColumnName("time");
+                entity.Property(e => e.Date).HasColumnName("date");
             });
 
             modelBuilder.Entity<Team>(entity =>
@@ -61,6 +62,7 @@ namespace C3Voetbal.Data
                 entity.Property(e => e.Password).HasColumnName("password");
                 entity.Property(e => e.IsAdmin).HasColumnName("is_admin");
                 entity.Property(e => e.TeamId).HasColumnName("team_id");
+                entity.Property(e => e.Points).HasColumnName("points");
             });
 
 
