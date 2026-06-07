@@ -96,7 +96,9 @@ namespace C3Voetbal
             if (user != null)
             {
                 _userPoints = user.Points;
-                PuntenText.Text = $"Jouw punten: {_userPoints}";
+                PuntenText.Text = $"Punten: {_userPoints}";
+                if (InzetNumberBox != null)
+                    InzetNumberBox.Maximum = _userPoints;
             }
         }
 
@@ -162,15 +164,30 @@ namespace C3Voetbal
             BetFeedbackText.Text = "";
         }
 
-        private void InzetButton_Click(object sender, RoutedEventArgs e)
+        private void InzetNumberBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
         {
-            var btn = sender as Button;
-            _inzet = int.Parse(btn.Tag.ToString());
-            InzetText.Text = $"Inzet: {_inzet} punt";
+            if (ErrorText == null || BevestigButton == null) return;
+
+            if (double.IsNaN(sender.Value))
+            {
+                sender.Value = 1;
+                return;
+            }
+
+            _inzet = (int)sender.Value;
+
+            // Maximum is jouw huidige punten
+            sender.Maximum = _userPoints;
 
             if (_inzet > _userPoints)
             {
                 ErrorText.Text = $"Je hebt maar {_userPoints} punten!";
+                ErrorText.Visibility = Visibility.Visible;
+                BevestigButton.IsEnabled = false;
+            }
+            else if (_inzet < 1)
+            {
+                ErrorText.Text = "Minimaal 1 punt inzetten!";
                 ErrorText.Visibility = Visibility.Visible;
                 BevestigButton.IsEnabled = false;
             }
@@ -179,7 +196,6 @@ namespace C3Voetbal
                 ErrorText.Visibility = Visibility.Collapsed;
                 BevestigButton.IsEnabled = true;
             }
-
         }
 
         private async void BevestigButton_Click(object sender, RoutedEventArgs e)
@@ -213,6 +229,12 @@ namespace C3Voetbal
             {
                 BetFeedbackText.Text = "❌ Er ging iets mis, probeer opnieuw.";
             }
+        }
+
+        private void DashboardButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dashboard = new DashboardPage(_loggedInUser);
+            dashboard.Activate();
         }
     }
 }
