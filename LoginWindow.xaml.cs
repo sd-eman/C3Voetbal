@@ -1,8 +1,9 @@
-using Microsoft.UI.Xaml;
+﻿using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using System;
+using C3Voetbal.Model;
+using Microsoft.UI.Xaml;
 
 namespace C3Voetbal
 {
@@ -43,14 +44,27 @@ namespace C3Voetbal
                     return;
                 }
 
-                var result = await response.Content.ReadFromJsonAsync<LoginResult>();
+                var json = await response.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"Login response: {json}");
+
+                var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var result = System.Text.Json.JsonSerializer.Deserialize<LoginResult>(json, options);
+                System.Diagnostics.Debug.WriteLine($"UserId: {result?.User?.Id}");
+
+                Session.UserId = result!.User!.Id;
+                Session.UserName = result.User.Name ?? "";
+                Session.IsAdmin = result.User.IsAdmin;
+                Session.TeamId = result.User.TeamId;
+                Session.UserName = result.User.Name ?? "";
+                Session.IsAdmin = result.User.IsAdmin;
+                Session.TeamId = result.User.TeamId;
 
                 // Hoofdscherm openen
                 var main = new MainWindow();
                 main.Activate();
                 this.Close();
             }
-            catch
+            catch   // ← HIER
             {
                 ErrorText.Text = "Kan geen verbinding maken met de server.";
                 LoginButton.IsEnabled = true;

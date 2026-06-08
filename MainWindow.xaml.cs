@@ -20,13 +20,23 @@ using Windows.Media.Protection.PlayReady;
 
 namespace C3Voetbal
 {
+    public class TeamDto
+    {
+        public ulong Id { get; set; }
+        public string Name { get; set; } = "";
+    }
+
     public class GameViewModel
     {
         public ulong Id { get; set; }
-        public string DisplayName { get; set; }
-        public string Time { get; set; }
-        public ulong Team1Id { get; set; }
-        public ulong Team2Id { get; set; }
+        public string Time { get; set; } = "";
+        public string Field { get; set; } = "";
+        public TeamDto? Team1 { get; set; }
+        public TeamDto? Team2 { get; set; }
+
+        public string DisplayName => $"{Team1?.Name ?? "?"} vs {Team2?.Name ?? "?"}";
+        public ulong Team1Id => Team1?.Id ?? 0;
+        public ulong Team2Id => Team2?.Id ?? 0;
     }
     public sealed partial class MainWindow : Window
     {
@@ -42,33 +52,20 @@ namespace C3Voetbal
             InitializeComponent();
             LoadGames();
         }
-        private void LoadGames()
+        private async void LoadGames()
         {
-            using var db = new C3VoetbalDbContext();
-            var teams = db.Teams.ToList();
-            var upcoming = db.Games
-                .Where(g => g.Team1Score == null && g.Team2Score == null)
-                .ToList()
-                .Select(g => new GameViewModel
-                {
-                    Id = g.Id,
-                    DisplayName = $"{teams.FirstOrDefault(t => t.Id == g.Team1Id)?.Name ?? "Team 1"} vs {teams.FirstOrDefault(t => t.Id == g.Team2Id)?.Name ?? "Team 2"}",
-                    Time = g.Time,
-                    Team1Id = g.Team1Id,
-                    Team2Id = g.Team2Id
-                }).ToList();
-            GamesListView.ItemsSource = upcoming;
+            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var games = await _client.GetFromJsonAsync<List<GameViewModel>>("games", options);
+            GamesListView.ItemsSource = games;
         }
         private void GamesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _selectedGame = GamesListView.SelectedItem as GameViewModel;
             if (_selectedGame == null) return;
-            using var db = new C3VoetbalDbContext();
-            var t1 = db.Teams.FirstOrDefault(t => t.Id == _selectedGame.Team1Id)?.Name ?? "Team 1";
-            var t2 = db.Teams.FirstOrDefault(t => t.Id == _selectedGame.Team2Id)?.Name ?? "Team 2";
+
             SelectedGameText.Text = _selectedGame.DisplayName;
-            RadioTeam1.Content = $"{t1} wint";
-            RadioTeam2.Content = $"{t2} wint";
+            RadioTeam1.Content = $"{_selectedGame.Team1?.Name ?? "Team 1"} wint";
+            RadioTeam2.Content = $"{_selectedGame.Team2?.Name ?? "Team 2"} wint";
             RadioTeam1.IsEnabled = true;
             RadioDraw.IsEnabled = true;
             RadioTeam2.IsEnabled = true;
@@ -77,6 +74,7 @@ namespace C3Voetbal
         }
         private async void PlaceBetButton_Click(object sender, RoutedEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine($"Session.UserId = {Session.UserId}");
             if (_selectedGame == null) return;
             BetOutcome? outcome = null;
             if (RadioTeam1.IsChecked == true) outcome = BetOutcome.Team1Wins;
@@ -89,6 +87,7 @@ namespace C3Voetbal
             }
             var response = await _client.PostAsJsonAsync("bets", new
             {
+                user_id = Session.UserId,
                 game_id = _selectedGame.Id,
                 predicted_outcome = outcome.Value
             });

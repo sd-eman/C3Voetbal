@@ -24,6 +24,7 @@ namespace C3Voetbal.Data
                 entity.Property(e => e.GameId).HasColumnName("game_id");
                 entity.Property(e => e.PredictedOutcome).HasColumnName("predicted_outcome");
                 entity.Property(e => e.Won).HasColumnName("won");
+                entity.Property(e => e.UserId).HasColumnName("user_id");
             });
         }
     }
