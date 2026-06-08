@@ -28,7 +28,25 @@ namespace C3Voetbal.Model
         [JsonPropertyName("won")]
         public bool? Won { get; set; }
 
+        [JsonPropertyName("inzet")]
+        public int Inzet { get; set; }
+
         [JsonPropertyName("user_id")]
         public ulong UserId { get; set; }
+    }
+
+    public class BetCheckResult
+    {
+        public List<BetResult>? Results { get; set; }
+    }
+
+    public class BetResult
+    {
+        public ulong GameId { get; set; }
+        public bool Gewonnen { get; set; }
+        public bool Gelijkspel { get; set; }
+        public string TeamNaam { get; set; } = "";
+        public int Inzet { get; set; }
+        public int PuntenVeranderd { get; set; }
     }
 }

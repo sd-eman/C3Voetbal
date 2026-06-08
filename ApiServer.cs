@@ -194,7 +194,7 @@ namespace C3Voetbal
                     {
                         GameId = Convert.ToUInt64(betRequest!.GameId),
                         UserId = Convert.ToUInt64(betRequest.UserId),
-                        PredictedOutcome = betRequest.PredictedOutcome,
+                        PredictedOutcome = (BetOutcome)betRequest.PredictedOutcome,
                         Inzet = betRequest.Inzet,
                         Won = null
                     };
@@ -234,9 +234,16 @@ namespace C3Voetbal
 
     public class BetRequest
     {
-        public long GameId { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("user_id")]
         public long UserId { get; set; }
-        public BetOutcome PredictedOutcome { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("game_id")]
+        public long GameId { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("predicted_outcome")]
+        public int PredictedOutcome { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("inzet")]
         public int Inzet { get; set; }
     }
 }

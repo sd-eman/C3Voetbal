@@ -2,24 +2,13 @@
 using C3Voetbal.Model;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Http;         // NIEUW
-using System.Net.Http.Json;    // NIEUW
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.Media.Protection.PlayReady;
-using Windows.System;
 
 namespace C3Voetbal
 {
@@ -41,14 +30,15 @@ namespace C3Voetbal
         public ulong Team1Id => Team1?.Id ?? 0;
         public ulong Team2Id => Team2?.Id ?? 0;
     }
+
     public sealed partial class MainWindow : Window
     {
-        private GameViewModel _selectedGame;
-        private UserDto _loggedInUser;      
-        private int _userPoints = 20;       
-        private int _inzet = 1;             
+        private GameViewModel? _selectedGame;
+        private UserDto _loggedInUser;
+        private int _userPoints = 20;
+        private int _inzet = 1;
 
-        private static readonly HttpClient _client = new HttpClient  // NIEUW
+        private static readonly HttpClient _client = new HttpClient
         {
             BaseAddress = new Uri("http://localhost:5000/api/")
         };
@@ -65,11 +55,11 @@ namespace C3Voetbal
                 if (t.IsFaulted)
                     System.Diagnostics.Debug.WriteLine($"CheckBets fout: {t.Exception?.Message}");
             });
-
         }
+
         private async void LoadGames()
         {
-            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var games = await _client.GetFromJsonAsync<List<GameViewModel>>("games", options);
             GamesListView.ItemsSource = games;
         }
@@ -82,8 +72,6 @@ namespace C3Voetbal
             {
                 _userPoints = user.Points;
                 PuntenText.Text = $"Punten: {_userPoints}";
-                if (InzetNumberBox != null)
-                    InzetNumberBox.Maximum = _userPoints;
             }
         }
 
@@ -127,25 +115,23 @@ namespace C3Voetbal
             RadioTeam1.IsEnabled = true;
             RadioDraw.IsEnabled = true;
             RadioTeam2.IsEnabled = true;
-            PlaceBetButton.IsEnabled = true;
+            RadioTeam1.IsChecked = false;
+            RadioDraw.IsChecked = false;
+            RadioTeam2.IsChecked = false;
             BetFeedbackText.Text = "";
-        }
-        private async void PlaceBetButton_Click(object sender, RoutedEventArgs e)
-        {
-            System.Diagnostics.Debug.WriteLine($"Session.UserId = {Session.UserId}");
-            if (_selectedGame == null) return;
-            BetOutcome? outcome = null;
-            if (RadioTeam1.IsChecked == true) outcome = BetOutcome.Team1Wins;
-            else if (RadioDraw.IsChecked == true) outcome = BetOutcome.Draw;
-            else if (RadioTeam2.IsChecked == true) outcome = BetOutcome.Team2Wins;
-            if (outcome == null)
-            {
-                BetFeedbackText.Text = "Kies eerst een uitkomst.";
-                return;
-            }
-            // Laat inzet panel zien
+
             InzetPanel.Visibility = Visibility.Visible;
-            BetFeedbackText.Text = "";
+            InzetNumberBox.Minimum = 1;
+            InzetNumberBox.Maximum = _userPoints > 0 ? _userPoints : 100;
+            InzetNumberBox.Value = 1;
+            _inzet = 1;
+            BevestigButton.IsEnabled = false;
+        }
+
+        private void Radio_Checked(object sender, RoutedEventArgs e)
+        {
+            if (BevestigButton != null)
+                BevestigButton.IsEnabled = true;
         }
 
         private void InzetNumberBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
@@ -159,9 +145,6 @@ namespace C3Voetbal
             }
 
             _inzet = (int)sender.Value;
-
-            // Maximum is jouw huidige punten
-            sender.Maximum = _userPoints;
 
             if (_inzet > _userPoints)
             {
@@ -184,35 +167,44 @@ namespace C3Voetbal
 
         private async void BevestigButton_Click(object sender, RoutedEventArgs e)
         {
-            BetOutcome outcome = BetOutcome.Draw;
-            if (RadioTeam1.IsChecked == true) outcome = BetOutcome.Team1Wins;
-            else if (RadioTeam2.IsChecked == true) outcome = BetOutcome.Team2Wins;
-            System.Diagnostics.Debug.WriteLine($"Bet versturen: game_id={_selectedGame.Id}, user_id={_loggedInUser.Id}, inzet={_inzet}");
-
-            var response = await _client.PostAsJsonAsync("bets", new
+            try
             {
-                user_id = Session.UserId,
-                game_id = _selectedGame.Id,
-                user_id = _loggedInUser.Id,
-                predicted_outcome = outcome,
-                inzet = _inzet
-            });
+                System.Diagnostics.Debug.WriteLine($"_loggedInUser.Id = {_loggedInUser?.Id}");
 
-            var responseBody = await response.Content.ReadAsStringAsync();
-            System.Diagnostics.Debug.WriteLine($"Bet response: {response.StatusCode} - {responseBody}");
+                BetOutcome outcome = BetOutcome.Draw;
+                if (RadioTeam1.IsChecked == true) outcome = BetOutcome.Team1Wins;
+                else if (RadioTeam2.IsChecked == true) outcome = BetOutcome.Team2Wins;
 
-            if (response.IsSuccessStatusCode)
-            {
-                BetFeedbackText.Text = "✓ Gok geplaatst! Punten worden verwerkt als de wedstrijd gespeeld is.";
-                InzetPanel.Visibility = Visibility.Collapsed;
-                PlaceBetButton.IsEnabled = false;
-                RadioTeam1.IsEnabled = false;
-                RadioDraw.IsEnabled = false;
-                RadioTeam2.IsEnabled = false;
+                _inzet = double.IsNaN(InzetNumberBox.Value) ? 1 : (int)InzetNumberBox.Value;
+
+                var response = await _client.PostAsJsonAsync("bets", new
+                {
+                    user_id = (long)_loggedInUser.Id,
+                    game_id = (long)_selectedGame!.Id,
+                    predicted_outcome = (int)outcome,
+                    inzet = _inzet
+                });
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"Bet response: {response.StatusCode} - {responseBody}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    BetFeedbackText.Text = "✓ Gok geplaatst!";
+                    InzetPanel.Visibility = Visibility.Collapsed;
+                    RadioTeam1.IsEnabled = false;
+                    RadioDraw.IsEnabled = false;
+                    RadioTeam2.IsEnabled = false;
+                }
+                else
+                {
+                    BetFeedbackText.Text = $"❌ Er ging iets mis: {responseBody}";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                BetFeedbackText.Text = "❌ Er ging iets mis, probeer opnieuw.";
+                System.Diagnostics.Debug.WriteLine($"BevestigButton fout: {ex}");
+                BetFeedbackText.Text = ex.Message;
             }
         }
 
@@ -223,4 +215,3 @@ namespace C3Voetbal
         }
     }
 }
-

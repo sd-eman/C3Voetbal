@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
 using C3Voetbal.Model;
 using Microsoft.UI.Xaml;
 
@@ -36,37 +35,32 @@ namespace C3Voetbal
             try
             {
                 var response = await _client.PostAsJsonAsync("login", new { email, password });
+                var json = await response.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"Status: {response.StatusCode}, Body: {json}");
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    ErrorText.Text = "Ongeldige inloggegevens.";
+                    ErrorText.Text = json;
                     LoginButton.IsEnabled = true;
                     return;
                 }
 
-                var json = await response.Content.ReadAsStringAsync();
-                System.Diagnostics.Debug.WriteLine($"Login response: {json}");
-
                 var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var result = System.Text.Json.JsonSerializer.Deserialize<LoginResult>(json, options);
-                System.Diagnostics.Debug.WriteLine($"UserId: {result?.User?.Id}");
 
                 Session.UserId = result!.User!.Id;
                 Session.UserName = result.User.Name ?? "";
                 Session.IsAdmin = result.User.IsAdmin;
                 Session.TeamId = result.User.TeamId;
-                Session.UserName = result.User.Name ?? "";
-                Session.IsAdmin = result.User.IsAdmin;
-                Session.TeamId = result.User.TeamId;
 
-                // Hoofdscherm openen
                 var main = new MainWindow(result.User);
                 main.Activate();
                 this.Close();
             }
-            catch   // ← HIER
+            catch (Exception ex)
             {
-                ErrorText.Text = "Kan geen verbinding maken met de server.";
+                ErrorText.Text = ex.Message;
+                System.Diagnostics.Debug.WriteLine($"Login fout: {ex}");
                 LoginButton.IsEnabled = true;
             }
         }

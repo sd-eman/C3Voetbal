@@ -16,11 +16,11 @@
     <Grid Background="#4a5c3a">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Bovenste balk met punten + dashboard -->
+        <!-- Bovenste balk -->
         <Grid Grid.Row="0" Margin="16,12,16,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -29,78 +29,83 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Text="C3Voetbal" Foreground="White" 
-               FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-            
-            <Button Grid.Column="2" Content="Dashboard" x:Name="DashboardButton"
-            Click="DashboardButton_Click" Margin="0,0,8,0"
-            Background="#8ba060" Foreground="White"
-            VerticalAlignment="Center"/>
-            
-            <Border Grid.Column="3" Background="#8ba060" CornerRadius="8" 
-            Padding="10,4"  VerticalAlignment="Center">
-                <TextBlock x:Name="PuntenText" Text="Punten: 20" 
-                   Foreground="White" FontWeight="SemiBold" FontSize="13"/>
-            </Border>
+            <TextBlock Grid.Column="0" Text="C3Voetbal" Foreground="White"
+                       FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
 
+            <Button Grid.Column="2" Content="Dashboard" x:Name="DashboardButton"
+                    Click="DashboardButton_Click" Margin="0,0,8,0"
+                    Background="#8ba060" Foreground="White"
+                    VerticalAlignment="Center"/>
+
+            <Border Grid.Column="3" Background="#8ba060" CornerRadius="8"
+                    Padding="10,4" VerticalAlignment="Center">
+                <TextBlock x:Name="PuntenText" Text="Punten: 20"
+                           Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+            </Border>
         </Grid>
-        
+
+        <!-- Wedstrijdenlijst -->
         <StackPanel Grid.Row="1" Margin="16">
             <TextBlock Margin="0,0,0,8" Text="Aankomende wedstrijden"
-                   Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                       Foreground="White" FontSize="18" FontWeight="SemiBold"/>
             <ListView x:Name="GamesListView"
-                  SelectionChanged="GamesListView_SelectionChanged"
-                  Background="#3a4a2c">
+                      SelectionChanged="GamesListView_SelectionChanged"
+                      Background="#3a4a2c">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Padding="12">
                             <TextBlock FontWeight="Bold" Text="{Binding DisplayName}"
-                                   Foreground="White"/>
+                                       Foreground="White"/>
                         </StackPanel>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
         </StackPanel>
 
-        <StackPanel Grid.Row="2" Margin="16" Spacing="8">
-            <TextBlock Text="Gok op deze wedstrijd:" Foreground="#ccddaa"/>
-            <TextBlock x:Name="SelectedGameText" FontWeight="Bold"
-                   Text="Selecteer een wedstrijd" Foreground="White" FontSize="16"/>
-            <RadioButton x:Name="RadioTeam1" Content="Team A wint"
-                     Foreground="White" IsEnabled="False"/>
-            <RadioButton x:Name="RadioDraw" Content="Gelijkspel"
-                     Foreground="White" IsEnabled="False"/>
-            <RadioButton x:Name="RadioTeam2" Content="Team B wint"
-                     Foreground="White" IsEnabled="False"/>
-            <Button Margin="0,12,0,0" Content="Gok plaatsen"
-                x:Name="PlaceBetButton" IsEnabled="False"
-                Click="PlaceBetButton_Click"
-                Background="#8ba060" Foreground="White"/>
+        <!-- Gok sectie -->
+        <ScrollViewer Grid.Row="2">
+            <StackPanel Margin="16" Spacing="8">
+                <TextBlock Text="Gok op deze wedstrijd:" Foreground="#ccddaa"/>
+                <TextBlock x:Name="SelectedGameText" FontWeight="Bold"
+                           Text="Selecteer een wedstrijd" Foreground="White" FontSize="16"/>
 
-            <!-- Inzet panel, standaard verborgen -->
-            <StackPanel x:Name="InzetPanel" Visibility="Collapsed" Spacing="8">
-                <TextBlock Text="Hoeveel punten wil je inzetten?" 
-               Foreground="#ccddaa"/>
-                <NumberBox x:Name="InzetNumberBox"
-               Minimum="1"
-               Maximum="50"
-               Value="1"
-               SpinButtonPlacementMode="Inline"
-               SmallChange="5"
-               LargeChange="10"
-               ValueChanged="InzetNumberBox_ValueChanged"
-               Background="#3a4a2c"
-               Foreground="White"
-               Width="150"
-               HorizontalAlignment="Left"/>
-                <TextBlock x:Name="ErrorText" Foreground="#ff6b6b" 
-               Visibility="Collapsed"/>
-                <Button x:Name="BevestigButton" Content="Bevestig gok"
-            Click="BevestigButton_Click"
-            Background="#8ba060" Foreground="White"/>
+                <RadioButton x:Name="RadioTeam1" Content="Team A wint"
+                             Foreground="White" IsEnabled="False"
+                             Checked="Radio_Checked"/>
+                <RadioButton x:Name="RadioDraw" Content="Gelijkspel"
+                             Foreground="White" IsEnabled="False"
+                             Checked="Radio_Checked"/>
+                <RadioButton x:Name="RadioTeam2" Content="Team B wint"
+                             Foreground="White" IsEnabled="False"
+                             Checked="Radio_Checked"/>
+
+                <!-- Inzet panel, zichtbaar na wedstrijd selectie -->
+                <StackPanel x:Name="InzetPanel" Visibility="Collapsed" Spacing="8">
+                    <TextBlock Text="Hoeveel punten wil je inzetten?"
+                               Foreground="#ccddaa"/>
+                    <NumberBox x:Name="InzetNumberBox"
+                               Minimum="1"
+                               Maximum="50"
+                               Value="1"
+                               SpinButtonPlacementMode="Inline"
+                               SmallChange="1"
+                               LargeChange="5"
+                               ValueChanged="InzetNumberBox_ValueChanged"
+                               Background="#3a4a2c"
+                               Foreground="White"
+                               Width="150"
+                               HorizontalAlignment="Left"/>
+                    <TextBlock x:Name="ErrorText" Foreground="#ff6b6b"
+                               Visibility="Collapsed"/>
+                    <Button x:Name="BevestigButton" Content="Bevestig gok"
+                            IsEnabled="False"
+                            Click="BevestigButton_Click"
+                            Background="#8ba060" Foreground="White"/>
+                </StackPanel>
+
+                <TextBlock x:Name="BetFeedbackText" Margin="0,8,0,0"
+                           Foreground="#ccddaa"/>
             </StackPanel>
-            <TextBlock x:Name="BetFeedbackText" Margin="0,8,0,0"
-                   Foreground="#ccddaa"/>
-        </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Window>
