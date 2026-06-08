@@ -60,7 +60,7 @@ namespace C3Voetbal
                 Session.TeamId = result.User.TeamId;
 
                 // Hoofdscherm openen
-                var main = new MainWindow();
+                var main = new MainWindow(result.User);
                 main.Activate();
                 this.Close();
             }

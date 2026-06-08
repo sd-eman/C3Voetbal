@@ -22,7 +22,9 @@ namespace C3Voetbal.Data
                 entity.ToTable("bets");
                 entity.Property(e => e.Id).HasColumnName("id");
                 entity.Property(e => e.GameId).HasColumnName("game_id");
+                entity.Property(e => e.UserId).HasColumnName("user_id");
                 entity.Property(e => e.PredictedOutcome).HasColumnName("predicted_outcome");
+                entity.Property(e => e.Inzet).HasColumnName("inzet");
                 entity.Property(e => e.Won).HasColumnName("won");
                 entity.Property(e => e.UserId).HasColumnName("user_id");
             });

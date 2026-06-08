@@ -16,5 +16,6 @@ namespace C3Voetbal.Model
         public string Field { get; set; }
         public ulong RefereeId { get; set; }
         public string Time { get; set; }
+        public DateTime? Date { get; set; }
     }
 }
